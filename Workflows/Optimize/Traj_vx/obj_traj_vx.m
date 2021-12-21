@@ -1,6 +1,6 @@
 function F  = obj_traj_vx(x,mdl,trackname,h_vx,h_xy)
 % Objective function to optimize trajectory of car (velocity along path)
-% Copyright 2020 The MathWorks, Inc.
+% Copyright 2020-2021 The MathWorks, Inc.
 
 load_system(mdl);
 
@@ -22,7 +22,7 @@ Maneuver.Trajectory = new_trajectory;
 assignin('base','Maneuver',Maneuver);
 
 % Run simulation
-if(x(3)>1)
+if(x(3)>=1)
     simOut=sim(mdl);
 else
     % Only run a short simulation if diff_exp < 1
@@ -38,7 +38,8 @@ ld = logsout_DrvBus.Values.Reference.latdev.Data;
 track_length = max(Maneuver.Trajectory.xTrajectory.Value);
 
 % Calculate cost
-[lap_time, max_ld] = check_lap_time(dist_car,track_length,ld);
+max_ld_threshold = str2double(get_param([mdl '/Check'],'lat_dev_threshold'));
+[lap_time, max_ld] = check_lap_time(dist_car,track_length,ld,max_ld_threshold);
 
 if(x(3)<1)
     % Prevent values of diff_exp that are less than 1
@@ -75,6 +76,8 @@ opt_iter.latdev  = max_ld;
 opt_iter.x       = VehBus.Values.World.x.Data;
 opt_iter.y       = VehBus.Values.World.y.Data;
 opt_iter.vx      = VehBus.Values.Chassis.Body.CG.vx.Data;
+opt_iter.bgx      = VehBus.Values.Chassis.Body.CG.gx.Data;
+opt_iter.bgy      = VehBus.Values.Chassis.Body.CG.gy.Data;
 opt_iter.xpath   = dist_car;
 opt_iter.traj_x  = new_trajectory.xTrajectory.Value;
 opt_iter.traj_vx = new_trajectory.vx.Value;
@@ -86,7 +89,7 @@ if(numiter==0)
 end
 evalin('base',['OptRes_' trackname '(' num2str(numiter+1) ') = opt_iter;']);
 
-function [lap_time, max_ld] = check_lap_time(dist_car,track_length,ld)
+function [lap_time, max_ld] = check_lap_time(dist_car,track_length,ld,max_ld_threshold)
 % Find time for lap and maximum deviation
 % If car leaves track, set lap time arbitrarily high
 %
@@ -103,8 +106,6 @@ if(isempty(lap_t_ind))
 else
     max_ld = max(ld(min_ld_ind:lap_t_ind(1)));
 end
-
-max_ld_threshold = str2double(get_param('sm_car/Check','lat_dev_threshold'));
 
 if(~isempty(lap_t_ind) && max_ld<max_ld_threshold)
     %if(~isempty(lap_t_ind) )

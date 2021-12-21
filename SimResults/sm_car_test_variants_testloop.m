@@ -4,9 +4,9 @@
 %  solver_typ = {'fixed step'};
 %  veh_set = [4 116 124 141 143];
 %  trailer_set = {'none'};
-%  plotstr = 'sm_car_plot1speed';
+%  plotstr = {'sm_car_plot1speed'};
 %
-% Copyright 2019-2020 The MathWorks, Inc.
+% Copyright 2019-2021 The MathWorks, Inc.
 
 % Loop over set of vehicles
 for veh_i = 1:length(veh_set)
@@ -20,10 +20,13 @@ for veh_i = 1:length(veh_set)
         else
             veh_suffix = veh_set{veh_i};
         end
-        eval(['Vehicle = Vehicle_' veh_suffix ';']);
-        sm_car_load_trailer_data(mdl,trailer_set{trl_i});
-        sm_car_config_vehicle(mdl);
+        % Load vehicle data, do not trigger variant selection
+        sm_car_load_vehicle_data('none',veh_suffix);
         
+        % Load trailer data, enable/disable trailer, trigger variant
+        % selection if trailer not 'none'
+        sm_car_load_trailer_data(mdl,trailer_set{trl_i});
+
         % Loop over all solver types to be tested
         for slv_i = 1:length(solver_typ)
             sm_car_config_solver(mdl,solver_typ{slv_i});
@@ -37,6 +40,11 @@ for veh_i = 1:length(veh_set)
                 % Some maneuvers change vehicle type (CRG)
                 sm_car_config_vehicle(mdl); 
                 
+                % If necessary, change controller
+                if(~strcmp(control_chg,'none'))
+                    set_param([mdl '/Controller'],'popup_control',control_chg)
+                end
+                
                 % Assemble suffix for results image
                 trailer_type = sm_car_vehcfg_getTrailerType(bdroot);
                 if(contains(lower(Trailer.config),'unstable') && ~strcmpi(trailer_type,'none'))
@@ -45,7 +53,7 @@ for veh_i = 1:length(veh_set)
                 Maneuver_suffix = char(maneuver_list(strcmp(maneuver_list(:,1),manv_set{m_i}),2));
                 suffix_str = ['Ca' veh_suffix 'Tr' trailer_type(1) '_Ma' Maneuver_suffix '_' get_param(bdroot,'Solver')];
                 test_suffix     = pad(num2str(testnum),3,'left','0');
-                filenamefig = [mdl '_' now_string '_' test_suffix '_' suffix_str '.png'];
+                filenamefig = [mdl '_' now_string '_' test_suffix '_' suffix_str];
                 disp_str = suffix_str;
                 
                 disp(['Run ' num2str(testnum) ' ' disp_str '****']);
@@ -56,9 +64,10 @@ for veh_i = 1:length(veh_set)
                 
                 %set_param(mdl,'FastRestart','on')
                 %  Simulation for 1e-3 to eliminate initialization time'
-                temp_init_run = sim(mdl,'StopTime','1e-3'); % Eliminate init time
+                %  --- Removed to save compile time, check sim duration
+                %temp_init_run = sim(mdl,'StopTime','1e-3'); % Eliminate init time
                 
-                %out = [];
+                out = [];
                 try
                     out = sim(mdl);  % Unique for ABS Test
                     test_success = 'Pass';
@@ -81,11 +90,12 @@ for veh_i = 1:length(veh_set)
                     xFin = logsout_xCar.Data(end)-px0;
                     yFin = logsout_yCar.Data(end)-py0;
                     
-                    eval(plotstr) % Plots are unique
+                    for plot_i=1:length(plotstr)
+                    eval(plotstr{plot_i}) % Plots are unique
                     
-                    saveas(gcf,['.\' results_foldername '\' filenamefig]);
-                    
-                    figname = filenamefig;
+                    saveas(gcf,['.\' results_foldername '\' filenamefig '_' num2str(plot_i) '.png']);
+                    end                    
+                    figname = [filenamefig '_1.png'];
                     
                 else
                     % Simulation failed

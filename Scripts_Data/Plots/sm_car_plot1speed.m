@@ -4,7 +4,7 @@
 % Plot results of vehicle test: position, x and y velocity components,
 % vehicle speed, and steering input.
 %
-% Copyright 2018-2020 The MathWorks, Inc.
+% Copyright 2018-2021 The MathWorks, Inc.
 
 % Check for simulation results
 if ~exist('logsout_sm_car', 'var')
@@ -29,7 +29,7 @@ logsout_xSteerA1 = logsout_VehBus.Values.Chassis.SuspA1.Steer.xRack;
 logsout_xSteerA2 = logsout_VehBus.Values.Chassis.SuspA2.Steer.xRack;
 logsout_vxVeh = logsout_VehBus.Values.World.vx;
 logsout_vyVeh = logsout_VehBus.Values.World.vy;
-logsout_sVeh = sqrt(logsout_vxVeh.Data.^2+logsout_vyVeh.Data.^2);
+logsout_vxyVeh = sqrt(logsout_vxVeh.Data.^2+logsout_vyVeh.Data.^2);
 logsout_xCar = logsout_VehBus.Values.World.x;
 logsout_yCar = logsout_VehBus.Values.World.y;
 
@@ -63,7 +63,7 @@ title('Steering Rack Pos | # Steps')
 xlabel('Time (s)')
 
 simlog_handles(3) = subplot(2, 2, 3);
-plot(logsout_vxVeh.Time, logsout_sVeh*3.6, 'LineWidth', 1)
+plot(logsout_vxVeh.Time, logsout_vxyVeh*3.6, 'LineWidth', 1)
 grid on
 title('Vehicle Speed')
 ylabel('Speed (km/hr)')
@@ -97,7 +97,7 @@ else
 end
 
 text(0.05,0.85,sprintf('%s\n%s',strrep(config_string,'_','\_'),get_param(bdroot,'Solver')),...
-    'Color',[1 1 1]*0.5,'Units','Normalized')
+    'Color',[1 1 1]*0.5,'Units','Normalized','FontSize',8)
 
 subplot(2,2,3)
 text(0.05,0.85,sprintf('Elapsed Time:\n%0.2f sec',...

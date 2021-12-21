@@ -1,4 +1,4 @@
-function sm_car_optim_traj_vx(trackname, maxIter)
+function sm_car_optim_traj_vx(mdl, trackname, maxIter)
 % Use optimization algorithms to find velocity trajectory along track
 % that minimizes lap time and keeps car on the track
 %
@@ -8,21 +8,18 @@ function sm_car_optim_traj_vx(trackname, maxIter)
 % 
 %   3D surface: 'CRG_Kyalami' 
 %
-% Copyright 2020 The MathWorks, Inc.
+% Copyright 2020-2021 The MathWorks, Inc.
 
-
-% Model for optimization
-mdl = 'sm_car';
 
 % Select vehicle configuration (basic, flat roads only)
-open_system('sm_car');
+open_system(mdl);
 warning off physmod:common:gl:sli:rtp:InvalidNonValueReferenceMask
 
 % Get time at start of optimization for results file
 datestringfile = datestr(now,'yymmddHHMM');
 
 % Set up model for optimization
-traj_coeff = setup_optim_traj_vx(trackname);
+traj_coeff = setup_optim_traj_vx(mdl,trackname);
 assignin('base','traj_coeff',traj_coeff);
 
 % Store initial value of max and min speed
@@ -82,7 +79,7 @@ options = optimoptions('patternsearch','PollMethod','GSSPositiveBasis2N', ...
     'MeshContractionFactor',0.25);
 
 LB = [4 5 1];  % Condition 1
-UB = [15 50 2];   % Condition 2
+UB = [15 40 2];   % Condition 2
 % Constraints are defined in the form of Ax <= b
 Am=[1 -1 0];
 bm=[0.5];
@@ -106,6 +103,7 @@ OptRes = evalin('base',['OptRes_' trackname ]);
 OptRes(end).final = x;
 OptRes(end).xref  = Maneuver.Trajectory.x.Value;
 OptRes(end).yref  = Maneuver.Trajectory.y.Value;
+OptRes(end).Vehicle  = evalin('base','Vehicle');
 
 % Write final results back to workspace for plotting
 assignin('base',['OptRes_' trackname],OptRes)

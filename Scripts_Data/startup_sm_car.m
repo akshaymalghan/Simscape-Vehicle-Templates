@@ -1,6 +1,6 @@
 function startup_sm_car
 % Startup file for sm_car.slx Example
-% Copyright 2019-2020 The MathWorks, Inc.
+% Copyright 2019-2021 The MathWorks, Inc.
 
 curr_proj = simulinkproject;
 
@@ -24,8 +24,17 @@ end
 [~,MFSwifttbx_folders]=sm_car_startupMFSwift;
 assignin('base','MFSwifttbx_folders',MFSwifttbx_folders);
 
+% Add folders with Simscape Multibody tire subsystem to path
+% if MATLAB version R2021b or higher
+if verLessThan('matlab', '9.11')
+    addpath([curr_proj.RootFolder filesep 'Libraries' filesep 'Vehicle' filesep 'Tire' filesep 'MFMbody' filesep 'MFMbody_None']);
+else
+    addpath([curr_proj.RootFolder filesep 'Libraries' filesep 'Vehicle' filesep 'Tire' filesep 'MFMbody' filesep 'MFMbody']);
+end
+
 %% Load visualization and other parameters in workspace
-evalin('base','sm_car_param_visual');
+Visual = sm_car_param_visual('default');
+assignin('base','Visual',Visual);
 
 %% Load/Create VDatabase
 % if they do not exist already (first time project is run)
@@ -44,7 +53,7 @@ if(~exist('VDatabase','var'))
             'This can take up to 10 minutes.';
             'Next time the data is loaded from .mat files which is much faster,';
             'and only Excel files that have been changed will be loaded.'
-            };        
+            };
         msgbox(msg,'First Time Load','help')
         VDatabase = sm_car_import_vehicle_data(0,1);
     end
@@ -56,10 +65,17 @@ assignin('base','VDatabase',VDatabase);
 if(isempty(which('Vehicle_100.mat')))
     sm_car_assemble_presets
 end
-load('Vehicle_139'); %#ok<LOAD>
-assignin('base','Vehicle',Vehicle_139);
-load('Trailer_01'); %#ok<LOAD>
-assignin('base','Trailer',Trailer_01);
+if verLessThan('matlab', '9.11')
+    load('Vehicle_139'); %#ok<LOAD>
+    assignin('base','Vehicle',Vehicle_139);
+    load('Trailer_01'); %#ok<LOAD>
+    assignin('base','Trailer',Trailer_01);
+else
+    load('Vehicle_189'); %#ok<LOAD>
+    assignin('base','Vehicle',Vehicle_189);
+    load('Trailer_07'); %#ok<LOAD>
+    assignin('base','Trailer',Trailer_07);
+end
 
 %% Load Initial Vehicle state database
 %sm_car_gen_upd_database('Init',1);
@@ -73,7 +89,8 @@ sm_car_gen_upd_database('Maneuver',1);
 sm_car_gen_driver_database;
 
 %% Load Camera Frame Database
-sm_car_gen_upd_database('Camera',1);
+CDatabase.Camera = sm_car_gen_camera_database;
+assignin('base','CDatabase',CDatabase)
 
 %% Load driving surface parameters
 Scene = sm_car_import_scene_data;
@@ -110,16 +127,26 @@ cd(fileparts(which('sm_car.slx')))
 limitDerivativePerturbations()
 daesscSetMultibody()
 
-%% If this is the top level project, open HTML script
-% Do not open it if this is a referenced project.
-this_project = simulinkproject;
-if(this_project.Information.TopLevel == 1)
-    web('Simscape_Vehicle_Library_Demo_Script.html');
+% If running in a parallel pool
+% do not open model or demo script
+open_start_content = 1;
+if(~isempty(ver('parallel')))
+    if(~isempty(getCurrentTask()))
+        open_start_content = 0;
+    end
 end
 
-%% Open app
-evalin('base','sm_car_vehcfg_run');
+if(open_start_content)
+    %% If this is the top level project, open HTML script
+    % Do not open it if this is a referenced project.
+    this_project = simulinkproject;
+    if(this_project.Information.TopLevel == 1)
+        web('Simscape_Vehicle_Library_Demo_Script.html');
+    end
 
-%% Open model
-sm_car
+    %% Open app
+    evalin('base','sm_car_vehcfg_run');
 
+    %% Open model
+    sm_car
+end

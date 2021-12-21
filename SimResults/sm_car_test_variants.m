@@ -1,6 +1,6 @@
 % Script to test many configurations under many events
 % Not a complete sweep of all combinations, but every variant is activated
-% Copyright 2019-2020 The MathWorks, Inc.
+% Copyright 2019-2021 The MathWorks, Inc.
 
 maneuver_list = {...
     'CRG Mallory Park',       'CMP';
@@ -83,25 +83,29 @@ results_foldername = [mdl '_' now_string];
 %results_foldername = 'sm_car_201121_0028';
 mkdir(results_foldername)
 
+control_chg = 'none';
+
 %% Test Set 1 - Main tests in Fast Restart, no MF-Swift
 manv_set = {'WOT Braking','Low Speed Steer'};
 solver_typ = {'variable step'};
 %veh_set1 = [0:1:15 16:16:112 113:1:127 128:1:147 161 163];
-veh_set1 = [0:1:7 16:16:112 113:1:119 128:1:139 141 143 144 147];
+veh_set1 = [0:1:7 16:16:112 113:1:119 128:1:139 141 143 144 147 183];
 trailer_set = {'none'};
 
 for veh_i = 1:length(veh_set1)
     for trl_i = 1:length(trailer_set)
         veh_suffix = pad(num2str(veh_set1(veh_i)),3,'left','0');
-        eval(['Vehicle = Vehicle_' veh_suffix ';']);
-        sm_car_load_trailer_data('sm_car',trailer_set{trl_i});        
+
+        % Load data without triggering variant selection
+        sm_car_load_vehicle_data('none',veh_suffix); 
+        sm_car_load_trailer_data('none',trailer_set{trl_i});
         sm_car_config_vehicle(mdl);
         
         % Loop over all solver types to be tested
         for slv_i = 1:length(solver_typ)
             sm_car_config_solver(mdl,solver_typ{slv_i});
             
-            sm_car_config_vehicle(mdl);
+            sm_car_config_vehicle(mdl); % config_solver can modify Vehicle
             
             set_param(mdl,'FastRestart','on')
             
@@ -186,25 +190,28 @@ sm_car_load_trailer_data('sm_car','none');
 %% Test Set 1a - Main tests NO Fast Restart
 manv_set = {'WOT Braking','Low Speed Steer'};
 solver_typ = {'variable step'};
-veh_set = [8:1:15 120:1:127 140 142 145 146 146 161 163];
+veh_set = [8:1:15 120:1:127 140 142 145 146 146 161 163 184];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 2: Short Maneuvers
 manv_set = {'Double Lane Change','Ice Patch'};
 solver_typ = {'variable step'};
-veh_set = [12 142 145];
+veh_set = [12 142 145 184 204];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 3 -- Long Maneuvers
 manv_set = {'Mallory Park','Mallory Park CCW'};
 solver_typ = {'variable step'};
-veh_set = [12 142 116 143 166 169];
+veh_set = [12 142 116 143 166 169 184];
+if(~verLessThan('MATLAB','9.11'))
+    veh_set = [veh_set 195 198]; % Add Mbody tests
+end
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 4 -- Steering
@@ -212,23 +219,32 @@ manv_set = {'Low Speed Steer'};
 solver_typ = {'variable step'};
 veh_set = [151:155];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 5 -- Fixed Step Simple Suspension
 manv_set = {'WOT Braking','Low Speed Steer','Turn'};
 solver_typ = {'fixed step'};
-veh_set = [4 116 124 141 143];
+veh_set = [4 116 124 141 145];
+if(~verLessThan('MATLAB','9.11'))
+    veh_set = [veh_set 199]; % Add Mbody tests
+end
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 6 -- Trailers
 manv_set = {'Double Lane Change'};
 solver_typ = {'variable step'};
-veh_set = [139 002 143];
-trailer_set = {'none','01','02'};
-plotstr = 'sm_car_plot1speed';
+veh_set = [139 002 145];
+trailer_set = {'none','03','02'};
+
+if(~verLessThan('MATLAB','9.11'))
+    veh_set = [veh_set 199]; % Add Mbody tests
+    trailer_set = [trailer_set(:)' {'07'}];
+end
+
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 7 -- Trailer Disturbance
@@ -236,7 +252,7 @@ manv_set = {'Trailer Disturbance'};
 solver_typ = {'variable step'};
 veh_set = [139];
 trailer_set = {'01','05'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 8 -- Testrig
@@ -244,15 +260,18 @@ manv_set = {'Testrig 4 Post'};
 solver_typ = {'variable step'};
 veh_set = [149];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot5bodymeas';
+plotstr = {'sm_car_plot5bodymeas'};
 sm_car_test_variants_testloop
 
 %% Test Set 9 -- Skidpad
 manv_set = {'Skidpad', 'Constant Radius Closed-Loop'};
 solver_typ = {'variable step'};
-veh_set = [139];
+veh_set = [139 184];
+if(~verLessThan('MATLAB','9.11'))
+    veh_set = [veh_set 198]; % Add Mbody tests
+end
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 10 -- ABS Test
@@ -285,13 +304,9 @@ for veh_i = 1:length(veh_set9)
             % disp(' ')
             disp(['Run ' num2str(testnum) ' ' disp_str '****']);
             
-            % Save portion of test configuration to results variable
-            sm_car_res(testnum).Cars = Vehicle.config;
-            sm_car_res(testnum).Solv = get_param(bdroot,'Solver');
-            
             out = [];
             try
-                out = sm_car_abs_test(veh_set9{veh_i});
+                out = sm_car_test_abs_function(veh_set9{veh_i});
                 test_success = 'Pass';
             catch
                 Elapsed_Sim_Time = toc;
@@ -299,6 +314,10 @@ for veh_i = 1:length(veh_set9)
             end
             
             %set_param(mdl,'FastRestart','off') % Change test config
+            
+            % Save portion of test configuration to results variable
+            sm_car_res(testnum).Cars = Vehicle.config;
+            sm_car_res(testnum).Solv = get_param(bdroot,'Solver');
             
             if(~isempty(out))
                 % Simulation succeeded
@@ -346,7 +365,7 @@ manv_set = {'RDF Plateau'};
 solver_typ = {'variable step'};
 veh_set = [171 172];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot2whlspeed';
+plotstr = {'sm_car_plot2whlspeed'};
 sm_car_test_variants_testloop
 
 %% Test Set 11a -- Plateau Z Only, MFeval, MF-Swift, Delft
@@ -354,7 +373,7 @@ manv_set = {'Plateau Z Only'};
 solver_typ = {'variable step'};
 veh_set = [139 165 171];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot2whlspeed';
+plotstr = {'sm_car_plot2whlspeed'};
 sm_car_test_variants_testloop
 
 %% Test Set 11b -- CRG Plateau, MF-Swift, Delft
@@ -362,7 +381,7 @@ manv_set = {'CRG Plateau'};
 solver_typ = {'variable step'};
 veh_set = [165 171];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot2whlspeed';
+plotstr = {'sm_car_plot2whlspeed'};
 sm_car_test_variants_testloop
 
 %% Test Set 12 -- RDF Rough Road, Delft Tyre only
@@ -370,7 +389,7 @@ manv_set = {'RDF Rough Road'};
 solver_typ = {'variable step'};
 veh_set = [171 172];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot5bodymeas';
+plotstr = {'sm_car_plot5bodymeas'};
 sm_car_test_variants_testloop
 
 %% Test Set 12a -- Rough Road Z Only, MFeval tires only
@@ -378,7 +397,7 @@ manv_set = {'Rough Road Z Only'};
 solver_typ = {'variable step'};
 veh_set = [139 165 171];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot5bodymeas';
+plotstr = {'sm_car_plot5bodymeas'};
 sm_car_test_variants_testloop
 
 %% Test Set 12 -- CRG Tests
@@ -386,15 +405,25 @@ manv_set = {'CRG Mallory Park','CRG Mallory Park F', 'Mallory Park Obstacle', 'M
 solver_typ = {'variable step'};
 veh_set = [170];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
+
+%% Test Set 12 -- CRG Tests Mbody
+if(~verLessThan('MATLAB','9.11'))
+    manv_set = {'CRG Mallory Park F', 'Mallory Park Obstacle', 'MCity','CRG Kyalami F','CRG Nurburgring N F','CRG Suzuka F'};
+    solver_typ = {'variable step'};
+    veh_set = [202];
+    trailer_set = {'none'};
+    plotstr = {'sm_car_plot1speed'};
+    sm_car_test_variants_testloop
+end
 
 %% Test Set 13 -- Drive Cycle FTP75
 manv_set = {'Drive Cycle FTP75' 'Drive Cycle UrbanCycle1'};
 solver_typ = {'variable step'};
 veh_set = [173 165];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
 %% Test Set 14 -- CRG Plateau Fuel Cell
@@ -402,10 +431,44 @@ manv_set = {'CRG Plateau'};
 solver_typ = {'variable step'};
 veh_set = [173];
 trailer_set = {'none'};
-plotstr = 'sm_car_plot2whlspeed';
+plotstr = {'sm_car_plot2whlspeed'};
 sm_car_test_variants_testloop
 
-%% Test Set 15 -- 3 Axle Bus Makhulu 6x2, 6x4, Amandla 6x2 
+%% Test Set 15 -- Battery 2 Motor Regen 
+manv_set = {'WOT Braking'};
+solver_typ = {'variable step'};
+veh_set = [179 180];
+if(~verLessThan('MATLAB','9.11'))
+    veh_set = [veh_set 197];
+end
+trailer_set = {'none'};
+plotstr = {'sm_car_plot8regen(logsout_sm_car)'};
+control_chg = 'Battery 2 Motor';  % Change controller within testloop, after config_vehicle
+sm_car_test_variants_testloop
+control_chg = 'none';             % Reset control_chg for remaining maneuvers
+
+%% Test Set 16 -- Torque Vectoring 
+manv_set = {'Turn'};
+solver_typ = {'variable step'};
+veh_set = [182];
+if(~verLessThan('MATLAB','9.11'))
+    veh_set = [veh_set 203];
+end
+trailer_set = {'none'};
+plotstr = {'sm_car_plot1speed'};
+control_chg = 'Torque Vector 4 Motor';  % Change controller within testloop, after config_vehicle
+sm_car_test_variants_testloop
+control_chg = 'none';                   % Reset control_chg for remaining maneuvers
+
+%% Test Set 17 -- Four Wheel Steer
+manv_set = {'Turn'};
+solver_typ = {'variable step'};
+veh_set = [185 188];
+trailer_set = {'none'};
+plotstr = {'sm_car_plot1speed'};
+sm_car_test_variants_testloop
+
+%% Test Set 18 -- 3 Axle Bus Makhulu 6x2, Amandla 6x2, Bus 6x4
 set_param([mdl '/Camera Frames'],'Commented','off');
 set_param(mdl,'SimMechanicsOpenEditorOnUpdate','on');
 bdclose(mdl)
@@ -420,25 +483,38 @@ sm_car_load_trailer_data(mdl,'none');
 
 manv_set = {'WOT Braking'};
 solver_typ = {'variable step'};
-veh_set = {'Axle3_000', 'Axle3_003', 'Axle3_008'};
+veh_set = {'Axle3_000', 'Axle3_008', 'Axle3_003'};
+if(~verLessThan('MATLAB','9.11'))
+    veh_set = [veh_set(:)' {'Axle3_017'}];
+end
 trailer_set = {'none'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
-%% Test Set 18 -- 3 Axle Truck Amandla trailer
+%% Test Set 19 -- 3 Axle Truck Amandla trailer MFSwift
 manv_set = {'WOT Braking'};
 solver_typ = {'variable step'};
 veh_set = {'Axle3_010'};
 trailer_set = {'Axle2_001','Axle2_021'};
-plotstr = 'sm_car_plot1speed';
+plotstr = {'sm_car_plot1speed'};
 sm_car_test_variants_testloop
 
-%% Test Set 19 -- 3 Axle Truck Amandla 
+%% Test Set 19 -- 3 Axle Truck Amandla trailer Mbody
+if(~verLessThan('MATLAB','9.11'))
+    manv_set = {'WOT Braking'};
+    solver_typ = {'variable step'};
+    veh_set = {'Axle3_019'};
+    trailer_set = {'Axle2_022','Axle2_032'};
+    plotstr = {'sm_car_plot1speed'};
+    sm_car_test_variants_testloop
+end
+
+%% Test Set 20 -- 3 Axle Truck Amandla MFeval
 manv_set = {'Double Lane Change'};
 solver_typ = {'variable step'};
 veh_set = {'Axle3_012'};
 trailer_set = {'Axle2_002', 'Axle2_004', 'Axle2_006', 'Axle2_008'};
-plotstr = 'sm_car_plot3maneuver(Maneuver,logsout_sm_car)';
+plotstr = {'sm_car_plot3maneuver(Maneuver,logsout_sm_car)'};
 sm_car_test_variants_testloop
 
 %% Process results
@@ -486,7 +562,8 @@ xlswrite(filename,res_out,sheetname,'A2');
 xlswrite(filename,{['''' datestr(now)]},sheetname,'R1');
 xlswrite(filename,{['''' computername]},sheetname,'R2');
 xlswrite(filename,{['''' version]},sheetname,'R3');
-xlswrite(filename,answer,sheetname,'R4');
+xlswrite(filename,{['''' 'MF-Swift Version: ' sm_car_check_mfswiftversion]},sheetname,'R4');
+xlswrite(filename,answer,sheetname,'R5');
 
 delvars = who('-regexp','Vehicle_\d\d\d');
 clear(delvars{:},'delvars');

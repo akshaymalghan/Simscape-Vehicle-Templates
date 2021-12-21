@@ -1,5 +1,5 @@
 # **Simscape Vehicle Templates**
-Copyright 2018-2020 The MathWorks, Inc.
+Copyright 2018-2021 The MathWorks, Inc.
 
 This library contains library blocks and a configurable vehicle model.  
 You can:
@@ -30,6 +30,56 @@ adjust the libraries so that variant can be selected.
 3. Modify parameter values in the "Vehicle" data structure in the MATLAB workspace.
  
 ### **Release History**
+**v2.6 -- November 2021**
+1.  Added decoupled suspension linkages: double wishbone, double wishbone no steer, 5 link.
+2.  Added decoupled roll and heave stiffness and damping
+3.  Added method for generating GGV diagram by sweeping gravity vector and aero loads
+4.  Added option to constrain vehicle with no yaw (for GGV tests)
+5.  Added option to vary gravity vector (for GGV tests)
+6.  Added option to terminate simulation based on maximum speed (for GGV tests)
+7.  Added unique aero settings for sedan and FSAE vehicle
+8.  Adjusted project startup script to work with parallel simulations
+9.  Adjusted four-wheel steering algorithm to make rear steer gain speed-dependent, updated test
+10. Fixed plots for showing fastest lap from optimization
+11. Fixed startup script to avoid 'dir(**/*)' command on Mac and Linux (for MF-Swift)
+
+**v2.5.1 -- October 2021**
+1.  Reduced scaling factor for initial speed in lap time optimizations.
+
+**v2.5 -- October 2021**
+1.  Increased initial speed for racetrack events to avoid wheels losing traction at start.
+
+**v2.4 -- September 2021**
+1.  Added option to use Simscape Multibody tire model (R2021b and higher)
+2.  Fixed parameterization of rim and tire mass, inertia
+3.  Changed "Inertia" parameter to "mjRim" for rim mass and inertia
+
+**v2.3 -- June 2021**
+1.  Added basic torque vectoring algorithm (rear axle only).
+2.  Added 2 templates for double-wishbone suspension, pushrod to upper arm.
+3.  Added anti-roll bar with rod linkage.
+4.  Added preset based on Formula SAE car sizing.
+5.  Adjusted controller and steering systems to permit steering on multiple axles.
+6.  Camera frame definitions from MATLAB (was Excel), adjusted Mechanics Explorer configuration
+7.  Added basic control parameters for default, ideal powertrain.
+8.  Added display elements for battery temperature with test script.
+9.  Fixed Ice Patch maneuver, Swift tire (use external road).
+10. Updated model for replaying results in Unreal to show two vehicles.
+
+**v2.2 -- May 2021**
+1. Added exercises 1-7 to teach basics of Simscape Vehicle Templates
+2. Added library and code to work with Simcenter Tire 2021.1 (new .tir parser)
+3. Updated fuel cell variant to work with boost converter, averaged switch (R20a and higher only)
+
+**v2.1 -- Mar 2021**
+1. Fixed bug in Simscape Vehicle Templates interface to MFeval CPI tire model
+2. Updated regenerative braking model to properly account for available motor torque
+3. Added serial regenerative braking algorithm for battery 2 motor powertrain
+4. Added presets for battery 2 motor powertrain with brake-by-wire for serial regenerative braking
+5. Added optimization example for lap time that considers battery SOC in cost function
+6. Modified code to handle update to find_system() for active variants in R2021a
+7. Increased bandwidth of brake actuators in PedalAbstract
+
 **v2.0 -- Dec 2020**
 **Major changes in this release to enable multi-axle vehicles.**
 **Datasets compatible with earlier releases will need changes to work with this version.**
